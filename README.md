@@ -4,22 +4,24 @@
 
 ## Архитектура
 - **Flask** - принимает HTTP-запросы
-- **Celery** - фоновая обработка изображений
-- **Redis** - брокер сообщений и хранилище результатов
+- **Celery** - фоновая обработка (байты напрямую, pickle, без base64)
+- **Redis** - брокер и хранилище результатов (TTL 1 час)
 - **OpenCV** - работа с изображениями и моделью
 
 ## Роуты
-- POST /upscale - загрузить изображение, получить task_id
+- POST /upscale - загрузить изображение (поле image), получить task_id
 - GET /tasks/<task_id> - статус задачи + ссылка на результат
 - GET /processed/<file> - скачать обработанное изображение
 
-## Бонусные задачи
+## Особенности
 - Модель EDSR загружается один раз (singleton)
-- Файлы не сохраняются на диск (BytesIO + Redis)
+- Файлы не сохраняются на диск (bytes + Redis)
+- Валидация форматов (png, jpg, jpeg, bmp, tiff)
+- TTL результатов в Redis (1 час)
 - Полная докеризация (web + worker + redis)
-- Тесты: pytest (4 passed)
+- Тесты: pytest (6 passed), изображение генерируется программно
 
-## Запуск локально
+## Запуск локально (Windows)
 1. docker compose up -d redis
 2. celery -A tasks worker --loglevel=info --pool=solo
 3. python main.py
@@ -31,8 +33,7 @@ docker compose up -d --build
 pytest -v
 
 ## Пример запроса
-bash
-curl -F file=@image.png http://127.0.0.1:5000/upscale
+curl -F image=@lama_300px.png http://127.0.0.1:5000/upscale
 curl http://127.0.0.1:5000/tasks/<task_id>
 
 Автор: Лев, студент Нетологии
